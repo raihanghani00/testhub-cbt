@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --color-brand: #2563eb;
+  --color-brand-2: #4f46e5;
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pop: pop 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-sheet: sheet 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade: fade 0.2s ease both;
+  --animate-timer: timer-pulse 1s ease-in-out infinite;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: scale(0.95) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes sheet {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes timer-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.06); }
+  }
+}
+
+html, body, #root { min-height: 100%; }
+
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f8fafc;
+  color: #1e293b;
+  -webkit-tap-highlight-color: transparent;
+}
+html.dark body { background: #0f172a; color: #f1f5f9; }
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
+
+.grad-primary { background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); }
+.grad-text {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+html.dark .grad-text { background-image: linear-gradient(135deg, #60a5fa 0%, #818cf8 100%); }
+
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+html.dark .glass {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(71, 85, 105, 0.45);
+}
+
+.card-shadow { box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 2px 6px -2px rgba(0, 0, 0, 0.04); }
+.card-shadow-lg { box-shadow: 0 20px 45px -15px rgba(15, 23, 42, 0.18), 0 4px 10px -4px rgba(15, 23, 42, 0.06); }
+html.dark .card-shadow { box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
+
+.dot-grid {
+  background-image: radial-gradient(rgba(100, 116, 139, 0.22) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+html.dark .dot-grid { background-image: radial-gradient(rgba(148, 163, 184, 0.16) 1px, transparent 1px); }
+.dot-grid-white {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.28) 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+}
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+.pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+.thin-scroll { scrollbar-width: thin; scrollbar-color: rgba(100, 116, 139, 0.4) transparent; }
+.thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.35); border-radius: 9999px; }
+
+.katex { font-size: 1.05em; }
+.katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.25rem 0; }
+
+.touch-target { min-height: 44px; min-width: 44px; }
