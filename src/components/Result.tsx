@@ -18,6 +18,10 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
   const [filter, setFilter] = useState<Filter>('all');
   const [secFilter, setSecFilter] = useState<number>(-1);
   const [ring, setRing] = useState(0);
+  const [pctRing, setPctRing] = useState(0);
+
+  const pct = a.maxScore > 0 ? (a.score / a.maxScore) * 100 : 0;
+  const percentile = Math.min(99.9, Math.max(1, Math.round(50 + (pct / 100) * 49)));
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -25,12 +29,14 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
     const start = performance.now();
     const step = (t: number) => {
       const p = Math.min(1, (t - start) / 1000);
-      setRing(Math.round(a.accuracy * (1 - Math.pow(1 - p, 3))));
+      const ease = 1 - Math.pow(1 - p, 3);
+      setRing(Math.round(a.accuracy * ease));
+      setPctRing(Math.round(percentile * ease));
       if (p < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [a.accuracy]);
+  }, [a.accuracy, percentile]);
 
   const rows = useMemo(
     () =>
@@ -46,7 +52,6 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
   );
 
   const shown = rows.filter((r) => (secFilter < 0 || r.si === secFilter) && (filter === 'all' || r.status === filter));
-  const pct = a.maxScore > 0 ? (a.score / a.maxScore) * 100 : 0;
   const verdict =
     pct >= 85 ? ['Outstanding!', 'text-emerald-500'] : pct >= 60 ? ['Great work', 'text-emerald-500'] : pct >= 35 ? ['Good effort', 'text-amber-500'] : ['Keep practising', 'text-rose-500'];
 
@@ -81,39 +86,30 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
 
       <main className="max-w-5xl mx-auto px-3 sm:px-6 py-3 sm:py-8 space-y-3 sm:space-y-6">
         {/* Score hero */}
-        <section className="relative rounded-3xl overflow-hidden glass card-shadow-lg p-4 sm:p-10 animate-fade-up">
-          <div className="absolute -top-24 -left-20 w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl" />
-          <div className="absolute -bottom-24 -right-10 w-72 h-72 rounded-full bg-emerald-400/10 blur-3xl" />
-          <div className="relative grid grid-cols-[1fr_auto] gap-3 sm:gap-8 items-center">
-            <div className="text-left">
+        <section className="relative rounded-2xl overflow-hidden glass card-shadow-lg p-3 sm:p-5 animate-fade-up">
+          <div className="absolute -top-16 -left-12 w-48 h-48 rounded-full bg-indigo-500/10 blur-3xl" />
+          <div className="absolute -bottom-16 -right-8 w-48 h-48 rounded-full bg-emerald-400/10 blur-3xl" />
+          <div className="relative flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-stretch">
+            <div className="text-left flex-1 min-w-0">
               <div className="flex items-center justify-start gap-2">
                 <PatternBadge pattern={a.pattern} />
-                <span className={`text-sm font-bold ${verdict[1]}`}>{verdict[0]}</span>
+                <span className={`text-xs sm:text-sm font-bold ${verdict[1]}`}>{verdict[0]}</span>
               </div>
-              <div className="mt-2 sm:mt-3 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] font-bold text-slate-500 dark:text-slate-400">Your score</div>
-              <div className="mt-0.5 flex items-baseline justify-start gap-1.5 sm:gap-3">
-                <span className="grad-text text-5xl sm:text-8xl font-black tracking-tight leading-none">{a.score}</span>
-                <span className="text-lg sm:text-4xl font-bold text-slate-400">/ {a.maxScore}</span>
+              <div className="mt-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.18em] font-bold text-slate-500 dark:text-slate-400">Your score</div>
+              <div className="mt-0 flex items-baseline justify-start gap-1.5">
+                <span className="grad-text text-3xl sm:text-5xl font-black tracking-tight leading-none">{a.score}</span>
+                <span className="text-base sm:text-2xl font-bold text-slate-400">/ {a.maxScore}</span>
               </div>
-              <div className="mt-3 sm:mt-6 flex flex-wrap justify-start gap-1.5 sm:gap-2.5">
+              <div className="mt-2.5 sm:mt-3 flex flex-wrap justify-start gap-1.5 sm:gap-2">
                 <Pill icon="check" label={`${a.correct} Correct`} cls="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" />
                 <Pill icon="xmark" label={`${a.wrong} Wrong`} cls="bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" />
                 <Pill icon="minus" label={`${a.skipped} Skipped`} cls="bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200" />
                 <Pill icon="clock" label={fmtDuration(a.timeTaken)} cls="bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300" />
               </div>
             </div>
-            <div className="mx-auto">
-              <div
-                className="relative w-28 h-28 sm:w-56 sm:h-56 rounded-full grid place-items-center"
-                style={{ background: `conic-gradient(#10b981 ${ring * 3.6}deg, rgba(148,163,184,0.25) 0deg)` }}
-              >
-                <div className="absolute inset-2.5 sm:inset-4 rounded-full bg-white dark:bg-slate-800 grid place-items-center shadow-inner">
-                  <div className="text-center">
-                    <div className="text-2xl sm:text-5xl font-black tabular-nums">{ring}<span className="text-sm sm:text-xl text-slate-400">%</span></div>
-                    <div className="text-[8px] sm:text-[11px] uppercase tracking-[0.12em] sm:tracking-[0.18em] font-bold text-slate-500 dark:text-slate-400">Accuracy</div>
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center justify-center gap-3 sm:gap-4 shrink-0">
+              <RingCircle value={ring} max={100} suffix="%" label="Accuracy" color="#10b981" size="sm:w-24 sm:h-24 w-20 h-20" />
+              <RingCircle value={pctRing} max={100} suffix="%ile" label="Percentile" color="#6366f1" size="sm:w-24 sm:h-24 w-20 h-20" />
             </div>
           </div>
         </section>
@@ -260,8 +256,22 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
 
 function Pill({ icon, label, cls }: { icon: string; label: string; cls: string }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-bold ${cls}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cls}`}>
       <I n={icon} className="text-xs" /> {label}
     </span>
+  );
+}
+
+function RingCircle({ value, max, suffix, label, color, size }: { value: number; max: number; suffix: string; label: string; color: string; size: string }) {
+  const deg = (value / max) * 360;
+  return (
+    <div className={`relative ${size} rounded-full grid place-items-center`} style={{ background: `conic-gradient(${color} ${deg}deg, rgba(148,163,184,0.22) 0deg)` }}>
+      <div className="absolute inset-2 rounded-full bg-white dark:bg-slate-800 grid place-items-center shadow-inner">
+        <div className="text-center">
+          <div className="text-lg sm:text-xl font-black tabular-nums leading-none">{value}<span className="text-[10px] sm:text-xs text-slate-400 font-bold">{suffix}</span></div>
+          <div className="text-[8px] sm:text-[9px] uppercase tracking-[0.1em] font-bold text-slate-500 dark:text-slate-400 mt-0.5">{label}</div>
+        </div>
+      </div>
+    </div>
   );
 }
