@@ -56,6 +56,7 @@ export default function Exam({ test, resume, onSubmit, onExit }: Props) {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const areaRef = useRef<HTMLDivElement>(null);
+  const sectionTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const done = useRef(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
@@ -246,6 +247,12 @@ export default function Exam({ test, resume, onSubmit, onExit }: Props) {
     return () => window.removeEventListener('keydown', h);
   }, []);
 
+  /* Auto-scroll the active section tab into view */
+  useEffect(() => {
+    const el = sectionTabRefs.current[sec];
+    if (el) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [sec]);
+
   /* Swipe navigation */
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
@@ -337,6 +344,7 @@ export default function Exam({ test, resume, onSubmit, onExit }: Props) {
               return (
                 <button
                   key={s.name + i}
+                  ref={(el) => { sectionTabRefs.current[i] = el; }}
                   onClick={() => {
                     if (locked) { toast(i < sec ? 'This section is already submitted' : 'Section locked until the current section ends'); return; }
                     if (!active) goTo(secStart[i]);
