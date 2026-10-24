@@ -150,10 +150,14 @@ export default function App() {
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0f172a' : '#2563eb');
   }, [dark]);
 
-  // Browser back: exam handles its own (pause modal); other views return to dashboard
+  // Browser back: exam handles its own (pause modal); admin returns to dashboard; other views return to dashboard
   useEffect(() => {
     const h = () => {
-      if (viewRef.current !== 'exam' && viewRef.current !== 'dashboard') setView('dashboard');
+      if (viewRef.current === 'admin') {
+        setView('dashboard');
+      } else if (viewRef.current !== 'exam' && viewRef.current !== 'dashboard') {
+        setView('dashboard');
+      }
     };
     window.addEventListener('popstate', h);
     return () => window.removeEventListener('popstate', h);
@@ -261,7 +265,7 @@ export default function App() {
 
   // Signed in but pending or blocked
   if (profile && (profile.status === 'pending' || profile.status === 'blocked')) {
-    return <PendingScreen user={user} profile={profile} onRefresh={refreshProfile} />;
+    return <PendingScreen user={user} profile={profile} dark={dark} onToggleDark={() => setDark((d) => !d)} onRefresh={refreshProfile} />;
   }
 
   return (

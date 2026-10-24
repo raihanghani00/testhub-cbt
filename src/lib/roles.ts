@@ -5,9 +5,58 @@ import {
   getDocs,
   query,
   setDoc,
+  updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
+
+/** Safely convert Firestore Timestamp, Date, number, or string into readable date. Returns '—' on invalid. */
+export function safeFormatDate(val: unknown): string {
+  if (val == null) return '—';
+  try {
+    // Firestore Timestamp: { seconds, nanoseconds } or object with .toDate()
+    if (typeof val === 'object' && val !== null) {
+      const v = val as { toDate?: () => Date; seconds?: number };
+      if (typeof v.toDate === 'function') return new Date(v.toDate()).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      if (typeof v.seconds === 'number') return new Date(v.seconds * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    if (val instanceof Date) return val.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    if (typeof val === 'number' && !isNaN(val)) return new Date(val).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    if (typeof val === 'string') { const d = new Date(val); if (!isNaN(d.getTime())) return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }); }
+  } catch { /* fall through */ }
+  return '—';
+}
+
+/** Safely extract a numeric timestamp from Firestore Timestamp, number, or Date. */
+function safeTimestamp(val: unknown, fallback: number): number {
+  if (val == null) return fallback;
+  try {
+    if (typeof val === 'object' && val !== null) {
+      const v = val as { toDate?: () => Date; seconds?: number };
+      if (typeof v.toDate === 'function') return v.toDate().getTime();
+      if (typeof v.seconds === 'number') return v.seconds * 1000;
+    }
+    if (typeof val === 'number' && !isNaN(val)) return val;
+    if (val instanceof Date) return val.getTime();
+  } catch { /* fall through */ }
+  return fallback;
+}
+
+/** Normalize a raw Firestore doc into a safe UserProfile with all fallbacks. */
+function normalizeProfile(raw: Record<string, unknown>, uid: string, fallbackEmail = ''): UserProfile {
+  const email = String(raw.email ?? fallbackEmail ?? '');
+  const storedName = typeof localStorage !== 'undefined' ? localStorage.getItem('testhub_student_name') : null;
+  return {
+    uid: String(raw.uid ?? uid),
+    name: String(storedName || raw.name || (email ? email.split('@')[0] : 'Unnamed Student')),
+    email,
+    photoURL: (raw.photoURL as string | null | undefined) ?? null,
+    role: (raw.role as Role) ?? 'student',
+    status: (raw.status as UserStatus) ?? 'pending',
+    registeredAt: safeTimestamp(raw.registeredAt, Date.now()),
+    lastLoginAt: safeTimestamp(raw.lastLoginAt, Date.now()),
+  };
+}
 
 export const SUPER_ADMIN_EMAILS = ['raihanghani22@gmail.com'];
 
@@ -56,6 +105,7 @@ export async function upsertUser(u: {
   const snap = await getDoc(userRef);
   const email = (u.email || '').toLowerCase();
   const now = Date.now();
+  const storedName = typeof localStorage !== 'undefined' ? localStorage.getItem('testhub_student_name') : null;
 
   if (isSuperAdmin(email)) {
     const profile: UserProfile = {
@@ -65,26 +115,32 @@ export async function upsertUser(u: {
       photoURL: u.photoURL,
       role: 'super_admin',
       status: 'approved',
-      registeredAt: snap.exists() ? (snap.data().registeredAt as number) || now : now,
+      registeredAt: snap.exists() ? safeTimestamp(snap.data().registeredAt, now) : now,
       lastLoginAt: now,
     };
     await setDoc(userRef, { ...profile }, { merge: true });
+    if (storedName) localStorage.removeItem('testhub_student_name');
     return profile;
   }
 
   if (snap.exists()) {
-    const data = snap.data() as Partial<UserProfile>;
+    const data = snap.data() as Record<string, unknown>;
+    // Use stored name only if the Firestore doc has no name or it's a nickname we want to override
+    const existingName = String(data.name ?? '');
+    const useName = storedName || existingName || u.displayName || email.split('@')[0] || 'Unnamed Student';
     const profile: UserProfile = {
       uid: u.uid,
-      name: u.displayName || data.name || email.split('@')[0] || 'Student',
-      email: u.email || data.email || '',
-      photoURL: u.photoURL ?? data.photoURL ?? null,
-      role: data.role ?? 'student',
-      status: data.status ?? 'pending',
-      registeredAt: data.registeredAt ?? now,
+      name: useName,
+      email: u.email || String(data.email ?? '') || '',
+      photoURL: u.photoURL ?? (data.photoURL as string | null | undefined) ?? null,
+      role: (data.role as Role) ?? 'student',
+      status: (data.status as UserStatus) ?? 'pending',
+      registeredAt: safeTimestamp(data.registeredAt, now),
       lastLoginAt: now,
     };
-    await setDoc(userRef, { ...profile }, { merge: true });
+    const patch: Record<string, unknown> = { name: profile.name, email: profile.email, photoURL: profile.photoURL, lastLoginAt: now };
+    if (storedName) { patch.name = storedName; localStorage.removeItem('testhub_student_name'); }
+    await setDoc(userRef, patch, { merge: true });
     return profile;
   }
 
@@ -113,7 +169,7 @@ export async function upsertUser(u: {
 
   const profile: UserProfile = {
     uid: u.uid,
-    name: u.displayName || email.split('@')[0] || 'Student',
+    name: storedName || u.displayName || email.split('@')[0] || 'Unnamed Student',
     email: u.email || '',
     photoURL: u.photoURL,
     role,
@@ -121,6 +177,7 @@ export async function upsertUser(u: {
     registeredAt: now,
     lastLoginAt: now,
   };
+  if (storedName) localStorage.removeItem('testhub_student_name');
   await setDoc(userRef, { ...profile }, { merge: true });
   return profile;
 }
@@ -129,14 +186,14 @@ export async function upsertUser(u: {
 export async function fetchUserProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, 'users', uid));
   if (!snap.exists()) return null;
-  return snap.data() as UserProfile;
+  return normalizeProfile(snap.data() as Record<string, unknown>, uid);
 }
 
 /** Fetch ALL user profiles for the admin panel. */
 export async function fetchAllUsers(): Promise<UserProfile[]> {
   const snap = await getDocs(collection(db, 'users'));
   const users: UserProfile[] = [];
-  snap.forEach((d) => users.push(d.data() as UserProfile));
+  snap.forEach((d) => users.push(normalizeProfile(d.data() as Record<string, unknown>, d.id)));
   return users.sort((a, b) => (b.registeredAt || 0) - (a.registeredAt || 0));
 }
 
@@ -211,8 +268,15 @@ export async function countPending(): Promise<number> {
   const snap = await getDocs(query(collection(db, 'users')));
   let n = 0;
   snap.forEach((d) => {
-    const u = d.data() as UserProfile;
+    const u = normalizeProfile(d.data() as Record<string, unknown>, d.id);
     if (u.status === 'pending' && !isSuperAdmin(u.email)) n++;
   });
   return n;
+}
+
+/** Allow a pending user to update their display name. */
+export async function updateUserName(uid: string, name: string): Promise<void> {
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error('Name cannot be empty.');
+  await updateDoc(doc(db, 'users', uid), { name: trimmed });
 }

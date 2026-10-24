@@ -3,7 +3,6 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { I, Toast } from './ui';
 import { Avatar, type AccountUser } from './AccountModal';
-import { fmtDate } from '../lib/utils';
 import { download } from '../lib/utils';
 import {
   type Role,
@@ -15,6 +14,7 @@ import {
   fetchWhitelist,
   isAdmin,
   removeWhitelistEmail,
+  safeFormatDate,
   setUserRole,
   setUserStatus,
 } from '../lib/roles';
@@ -74,21 +74,23 @@ export default function AdminPanel({ me, myProfile, dark, onToggleDark, onBack, 
   useEffect(() => { reload(); }, [reload]);
 
   const counts = useMemo(() => {
-    const pending = users.filter((u) => u.status === 'pending').length;
-    const approved = users.filter((u) => u.status === 'approved' && !isAdmin(u.role)).length;
-    const admins = users.filter((u) => isAdmin(u.role)).length;
-    const blocked = users.filter((u) => u.status === 'blocked').length;
+    const pending = users.filter((u) => (u.status ?? 'pending') === 'pending').length;
+    const approved = users.filter((u) => (u.status ?? 'pending') === 'approved' && !isAdmin(u.role ?? 'student')).length;
+    const admins = users.filter((u) => isAdmin(u.role ?? 'student')).length;
+    const blocked = users.filter((u) => (u.status ?? 'pending') === 'blocked').length;
     return { total: users.length, pending, approved, admins, blocked };
   }, [users]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return users.filter((u) => {
-      if (q && !u.name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false;
-      if (tab === 'pending') return u.status === 'pending';
-      if (tab === 'approved') return u.status === 'approved' && !isAdmin(u.role);
-      if (tab === 'admins') return isAdmin(u.role);
-      if (tab === 'blocked') return u.status === 'blocked';
+      const name = (u.name || 'Unnamed Student').toLowerCase();
+      const email = (u.email || '').toLowerCase();
+      if (q && !name.includes(q) && !email.includes(q)) return false;
+      if (tab === 'pending') return (u.status ?? 'pending') === 'pending';
+      if (tab === 'approved') return (u.status ?? 'pending') === 'approved' && !isAdmin(u.role ?? 'student');
+      if (tab === 'admins') return isAdmin(u.role ?? 'student');
+      if (tab === 'blocked') return (u.status ?? 'pending') === 'blocked';
       return true;
     });
   }, [users, search, tab]);
@@ -138,9 +140,11 @@ export default function AdminPanel({ me, myProfile, dark, onToggleDark, onBack, 
 
   const exportCsv = () => {
     const header = 'Name,Email,Role,Status,Registration Date\n';
-    const rows = users.map((u) =>
-      `"${u.name.replace(/"/g, '""')}","${u.email.replace(/"/g, '""')}","${ROLE_BADGE[u.role].label}","${STATUS_BADGE[u.status].label}","${fmtDate(u.registeredAt)}"`,
-    );
+    const rows = users.map((u) => {
+      const role = u.role ?? 'student';
+      const status = u.status ?? 'pending';
+      return `"${(u.name || 'Unnamed Student').replace(/"/g, '""')}","${(u.email || '').replace(/"/g, '""')}","${ROLE_BADGE[role]?.label ?? 'Student'}","${STATUS_BADGE[status]?.label ?? 'Pending'}","${safeFormatDate(u.registeredAt)}"`;
+    });
     download('testhub-users.csv', header + rows.join('\n'), 'text/csv');
     flash('CSV downloaded');
   };
@@ -302,7 +306,9 @@ export default function AdminPanel({ me, myProfile, dark, onToggleDark, onBack, 
           ) : (
             filtered.map((u, i) => {
               const isSelf = u.uid === myProfile.uid;
-              const isSuper = u.role === 'super_admin';
+              const role = u.role ?? 'student';
+      const status = u.status ?? 'pending';
+              const isSuper = role === 'super_admin';
               const isBusy = busyUid === u.uid;
               return (
                 <div
@@ -313,7 +319,7 @@ export default function AdminPanel({ me, myProfile, dark, onToggleDark, onBack, 
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-slate-200 dark:ring-slate-600 shrink-0">
                       {u.photoURL ? (
-                        <img src={u.photoURL} alt={u.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                        <img src={u.photoURL} alt={u.name || 'Unnamed'} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                       ) : (
                         <span className="w-full h-full grid place-items-center grad-primary text-white font-extrabold uppercase text-sm">
                           {(u.name || u.email || '?').charAt(0)}
@@ -322,33 +328,33 @@ export default function AdminPanel({ me, myProfile, dark, onToggleDark, onBack, 
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-sm truncate">{u.name}</span>
+                        <span className="font-bold text-sm truncate">{u.name || 'Unnamed Student'}</span>
                         {isSelf && <span className="text-[10px] font-bold text-indigo-500">(You)</span>}
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{u.email}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Registered {fmtDate(u.registeredAt)}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{u.email || ''}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Registered {safeFormatDate(u.registeredAt)}</div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap shrink-0">
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${ROLE_BADGE[u.role].cls}`}>
-                      {ROLE_BADGE[u.role].label}
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${ROLE_BADGE[role]?.cls ?? ROLE_BADGE.student.cls}`}>
+                      {ROLE_BADGE[role]?.label ?? 'Student'}
                     </span>
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${STATUS_BADGE[u.status].cls}`}>
-                      {STATUS_BADGE[u.status].label}
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${STATUS_BADGE[status]?.cls ?? STATUS_BADGE.pending.cls}`}>
+                      {STATUS_BADGE[status]?.label ?? 'Pending'}
                     </span>
                   </div>
 
                   {/* Actions */}
                   {!isSuper && !isSelf && (
                     <div className="flex items-center gap-1.5 flex-wrap shrink-0">
-                      {u.status !== 'approved' && (
+                      {status !== 'approved' && (
                         <ActionBtn icon="check" label="Approve" tone="emerald" busy={isBusy} onClick={() => approve(u)} />
                       )}
-                      {u.status !== 'blocked' && (
+                      {status !== 'blocked' && (
                         <ActionBtn icon="ban" label="Block" tone="rose" busy={isBusy} onClick={() => block(u)} />
                       )}
-                      {u.role === 'student' ? (
+                      {role === 'student' ? (
                         <ActionBtn icon="user-shield" label="Make Admin" tone="blue" busy={isBusy} onClick={() => makeAdmin(u)} />
                       ) : (
                         <ActionBtn icon="user-minus" label="Remove Admin" tone="amber" busy={isBusy} onClick={() => removeAdmin(u)} />
