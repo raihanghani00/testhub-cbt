@@ -79,4 +79,4 @@ export interface Attempt {
   sectionStats: SectionStat[];
 }
 
-export type View = 'dashboard' | 'instructions' | 'exam' | 'result' | 'history-report';
+export type View = 'dashboard' | 'instructions' | 'exam' | 'result' | 'history-report' | 'admin';
