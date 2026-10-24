@@ -16,11 +16,11 @@ import {
   clearProgressEverywhere, pushAttempt, pushTest, removeAttempt, removeTest, setCloudErrorHandler, setCloudUser, syncAll,
 } from './lib/cloud';
 import {
-  getName, hasProgress, isSeeded, loadAttempts, loadTests, loadTheme, markSeeded,
-  saveAttempts, saveTests, saveTheme, setName,
+  getName, hasProgress, loadTheme,
+  purgeLegacyKeys, saveAttempts, saveTests, saveTheme, setName,
+  setStorageUid,
 } from './lib/storage';
-import { buildTest, parseTxt, toJson } from './lib/parser';
-import { SAMPLE_TXT } from './lib/sample';
+import { toJson } from './lib/parser';
 import { download } from './lib/utils';
 import { type UserProfile, countPending, fetchUserProfile, isAdmin, upsertUser } from './lib/roles';
 
@@ -41,23 +41,9 @@ function describe(e: unknown): string {
   return 'Cloud sync failed. Your data is still safe on this device.';
 }
 
-function seedTests(): Test[] {
-  const existing = loadTests();
-  if (existing.length || isSeeded()) return existing;
-  const { sections } = parseTxt(SAMPLE_TXT);
-  // fixed ids so the sample tests do not duplicate when syncing between devices
-  const seeded = [
-    { ...buildTest({ title: 'SSC CGL Tier-I · Full Mock 01', pattern: 'TCS', duration: 30, sectionDuration: 0, pos: 2, neg: 0.5 }, sections), id: 'sample-ssc-tcs' },
-    { ...buildTest({ title: 'Banking Prelims · Sectional Mock', pattern: 'Eduquity', duration: 30, sectionDuration: 10, pos: 1, neg: 0.25 }, sections), id: 'sample-bank-edu' },
-  ];
-  saveTests(seeded);
-  markSeeded();
-  return seeded;
-}
-
 export default function App() {
-  const [tests, setTests] = useState<Test[]>(seedTests);
-  const [attempts, setAttempts] = useState<Attempt[]>(loadAttempts);
+  const [tests, setTests] = useState<Test[]>([]);
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [dark, setDark] = useState<boolean>(loadTheme);
   const [view, setView] = useState<View>('dashboard');
   const [active, setActive] = useState<Test | null>(null);
@@ -104,11 +90,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    purgeLegacyKeys();
     setCloudErrorHandler((m) => { setSyncState('error'); setSyncMsg(m); });
     const off = onAuthStateChanged(auth, async (u) => {
       if (u) {
         setCloudUser(u.uid);
+        setStorageUid(u.uid);
         setUser(toAccountUser(u));
+        setTests([]);
+        setAttempts([]);
         if (getName() === 'Guest Candidate') setName(u.displayName || (u.email ? u.email.split('@')[0] : 'Student'));
         try {
           const p = await upsertUser({ uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL });
@@ -125,9 +115,12 @@ export default function App() {
         }
       } else {
         setCloudUser(null);
+        setStorageUid(null);
         setUser(null);
         setProfile(null);
         setPendingCount(0);
+        setTests([]);
+        setAttempts([]);
         setSyncState('idle');
       }
       setAuthReady(true);

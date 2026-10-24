@@ -2,7 +2,7 @@ import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore'
 import { db } from './firebase';
 import type { Attempt, Progress, Test } from '../types';
 import {
-  clearProgress, loadAttempts, loadProgress, loadTests, saveAttempts, saveProgress, saveTests,
+  clearProgress, loadProgress, saveAttempts, saveProgress, saveTests,
 } from './storage';
 
 /**
@@ -76,19 +76,13 @@ export async function syncAll(profile?: { name: string; email: string }): Promis
   ]);
   const writes: Promise<unknown>[] = [];
 
-  // tests
+  // tests — download only (no local merge to avoid cross-account leakage)
   const tests = new Map<string, Test>();
   tSnap.forEach((d) => tests.set(d.id, d.data() as Test));
-  loadTests().forEach((t) => {
-    if (!tests.has(t.id)) { tests.set(t.id, t); writes.push(setDoc(ref('tests', t.id), clean(t), { merge: true })); }
-  });
 
-  // attempts
+  // attempts — download only
   const attempts = new Map<string, Attempt>();
   aSnap.forEach((d) => attempts.set(d.id, d.data() as Attempt));
-  loadAttempts().forEach((a) => {
-    if (!attempts.has(a.id)) { attempts.set(a.id, a); writes.push(setDoc(ref('attempts', a.id), clean(a), { merge: true })); }
-  });
 
   // paused progress: newest wins
   const cloudProg = new Map<string, Progress>();

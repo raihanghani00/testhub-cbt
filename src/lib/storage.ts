@@ -1,11 +1,12 @@
 import type { Attempt, Progress, Test } from '../types';
 
-const K_TESTS = 'testhub-tests';
-const K_ATTEMPTS = 'testhub-attempts';
+let uid: string | null = null;
+export const setStorageUid = (u: string | null) => { uid = u; };
+
 const K_THEME = 'testhub-theme';
 const K_NAME = 'testhub-name';
-const K_SEED = 'testhub-seeded';
-const progKey = (id: string) => `exam-progress-${id}`;
+
+const LEGACY_KEYS = ['testhub-tests', 'testhub-attempts', 'testhub-seeded'];
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -25,22 +26,43 @@ function write(key: string, value: unknown): boolean {
   }
 }
 
-export const loadTests = () => read<Test[]>(K_TESTS, []);
-export const saveTests = (t: Test[]) => write(K_TESTS, t);
+const testsKey = () => (uid ? `testhub-tests-${uid}` : null);
+const attemptsKey = () => (uid ? `testhub-attempts-${uid}` : null);
+const progKey = (id: string) => (uid ? `exam-progress-${uid}-${id}` : null);
 
-export const loadAttempts = () => read<Attempt[]>(K_ATTEMPTS, []);
+export const loadTests = (): Test[] => {
+  const k = testsKey();
+  return k ? read<Test[]>(k, []) : [];
+};
+export const saveTests = (t: Test[]): boolean => {
+  const k = testsKey();
+  return k ? write(k, t) : false;
+};
+
+export const loadAttempts = (): Attempt[] => {
+  const k = attemptsKey();
+  return k ? read<Attempt[]>(k, []) : [];
+};
 export function saveAttempts(a: Attempt[]) {
-  // quota fallback: drop oldest attempts until it fits
+  const k = attemptsKey();
+  if (!k) return;
   let list = a;
-  while (list.length && !write(K_ATTEMPTS, list)) list = list.slice(0, -1);
+  while (list.length && !write(k, list)) list = list.slice(0, -1);
 }
 
-export const loadProgress = (id: string) => read<Progress | null>(progKey(id), null);
-export const saveProgress = (id: string, p: Progress) => write(progKey(id), p);
-export const clearProgress = (id: string) => {
-  try { localStorage.removeItem(progKey(id)); } catch { /* ignore */ }
+export const loadProgress = (id: string): Progress | null => {
+  const k = progKey(id);
+  return k ? read<Progress | null>(k, null) : null;
 };
-export const hasProgress = (id: string) => !!loadProgress(id);
+export const saveProgress = (id: string, p: Progress): boolean => {
+  const k = progKey(id);
+  return k ? write(k, p) : false;
+};
+export const clearProgress = (id: string) => {
+  const k = progKey(id);
+  if (k) try { localStorage.removeItem(k); } catch { /* ignore */ }
+};
+export const hasProgress = (id: string): boolean => !!loadProgress(id);
 
 export const loadTheme = (): boolean => {
   try {
@@ -60,5 +82,8 @@ export const setName = (n: string) => {
   try { localStorage.setItem(K_NAME, n); } catch { /* ignore */ }
 };
 
-export const isSeeded = () => { try { return !!localStorage.getItem(K_SEED); } catch { return true; } };
-export const markSeeded = () => { try { localStorage.setItem(K_SEED, '1'); } catch { /* ignore */ } };
+export const purgeLegacyKeys = () => {
+  for (const key of LEGACY_KEYS) {
+    try { localStorage.removeItem(key); } catch { /* ignore */ }
+  }
+};
