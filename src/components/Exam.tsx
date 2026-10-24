@@ -381,7 +381,7 @@ export default function Exam({ test, resume, onSubmit, onExit }: Props) {
             onTouchEnd={onTouchEnd}
             className="flex-1 overflow-y-auto thin-scroll overscroll-contain"
           >
-            <div key={q.id} className="max-w-4xl mx-auto p-3 sm:p-6 space-y-4 animate-fade-up">
+            <div key={q.id} className="max-w-4xl mx-auto p-3 sm:p-5 space-y-3 animate-fade-up">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <span className="grad-primary text-white text-sm font-extrabold px-3.5 py-1.5 rounded-xl shadow-md shadow-indigo-500/20 whitespace-nowrap shrink-0">Q {f.qi + 1}</span>
@@ -394,12 +394,12 @@ export default function Exam({ test, resume, onSubmit, onExit }: Props) {
                 </div>
               </div>
 
-              <div className={`rounded-2xl bg-indigo-50/70 dark:bg-slate-800/80 ${paused ? 'blur-md select-none pointer-events-none' : ''} border border-indigo-100 dark:border-slate-700 p-4 sm:p-6 card-shadow`}>
+              <div className={`rounded-2xl bg-indigo-50/70 dark:bg-slate-800/80 ${paused ? 'blur-md select-none pointer-events-none' : ''} border border-indigo-100 dark:border-slate-700 p-3 sm:p-4 card-shadow`}>
                 <RichText text={q.text} className="text-[15px] sm:text-[17px] leading-relaxed font-medium text-slate-800 dark:text-slate-100" />
                 {q.img && <div className="mt-4"><ZoomImg src={q.img} /></div>}
               </div>
 
-              <div className={`space-y-3 pb-4 ${paused ? 'blur-md select-none pointer-events-none' : ''}`} role="radiogroup">
+              <div className={`space-y-2 pb-3 ${paused ? 'blur-md select-none pointer-events-none' : ''}`} role="radiogroup">
                 {q.options.map((o, i) => {
                   const on = st.sel === i;
                   return (
@@ -410,13 +410,13 @@ export default function Exam({ test, resume, onSubmit, onExit }: Props) {
                       tabIndex={0}
                       onClick={() => select(i)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(i); } }}
-                      className={`flex items-center gap-3 sm:gap-4 rounded-2xl border-2 p-3 sm:p-4 min-h-[58px] cursor-pointer transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
+                      className={`flex items-center gap-2.5 sm:gap-3 rounded-xl border-2 p-2.5 sm:p-3 min-h-[48px] cursor-pointer transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${
                         on
                           ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/15 scale-[1.015] shadow-lg shadow-indigo-500/15'
                           : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-indigo-500/60'
                       }`}
                     >
-                      <span className={`grid place-items-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl text-base font-extrabold shrink-0 transition ${on ? 'grad-primary text-white shadow-md' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-200'}`}>
+                      <span className={`grid place-items-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg text-sm font-extrabold shrink-0 transition ${on ? 'grad-primary text-white shadow-md' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-200'}`}>
                         {LETTERS[i]}
                       </span>
                       <span className="flex-1 min-w-0 space-y-2">
