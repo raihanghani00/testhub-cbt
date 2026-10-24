@@ -8,6 +8,9 @@ import Exam from './components/Exam';
 import Result from './components/Result';
 import { ConfirmDialog, Toast } from './components/ui';
 import AccountModal, { type AccountUser, type SyncState } from './components/AccountModal';
+import LandingPage from './components/LandingPage';
+import PendingScreen from './components/PendingScreen';
+import AdminPanel from './components/AdminPanel';
 import { auth } from './lib/firebase';
 import {
   clearProgressEverywhere, pushAttempt, pushTest, removeAttempt, removeTest, setCloudErrorHandler, setCloudUser, syncAll,
@@ -19,6 +22,7 @@ import {
 import { buildTest, parseTxt, toJson } from './lib/parser';
 import { SAMPLE_TXT } from './lib/sample';
 import { download } from './lib/utils';
+import { type UserProfile, countPending, fetchUserProfile, isAdmin, upsertUser } from './lib/roles';
 
 interface Confirm {
   title: string;
@@ -64,6 +68,9 @@ export default function App() {
   const [dashTab, setDashTab] = useState<'tests' | 'history'>('tests');
   const [toast, setToast] = useState<string | null>(null);
   const [user, setUser] = useState<AccountUser | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const [account, setAccount] = useState(false);
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [syncMsg, setSyncMsg] = useState('');
@@ -98,17 +105,32 @@ export default function App() {
 
   useEffect(() => {
     setCloudErrorHandler((m) => { setSyncState('error'); setSyncMsg(m); });
-    const off = onAuthStateChanged(auth, (u) => {
+    const off = onAuthStateChanged(auth, async (u) => {
       if (u) {
         setCloudUser(u.uid);
         setUser(toAccountUser(u));
         if (getName() === 'Guest Candidate') setName(u.displayName || (u.email ? u.email.split('@')[0] : 'Student'));
-        doSync();
+        try {
+          const p = await upsertUser({ uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL });
+          setProfile(p);
+          if (p.status === 'approved') {
+            doSync();
+            if (isAdmin(p.role)) {
+              countPending().then(setPendingCount).catch(() => {});
+            }
+          }
+        } catch (e) {
+          console.warn('[roles] upsert failed', e);
+          setProfile(null);
+        }
       } else {
         setCloudUser(null);
         setUser(null);
+        setProfile(null);
+        setPendingCount(0);
         setSyncState('idle');
       }
+      setAuthReady(true);
     });
     return () => { off(); setCloudErrorHandler(null); };
   }, [doSync]);
@@ -207,8 +229,54 @@ export default function App() {
     }, 80);
   };
 
+  const refreshProfile = useCallback(async () => {
+    if (!auth.currentUser) return;
+    const p = await fetchUserProfile(auth.currentUser.uid);
+    if (p) {
+      setProfile(p);
+      if (isAdmin(p.role)) {
+        countPending().then(setPendingCount).catch(() => {});
+      }
+    }
+  }, []);
+
+  // Loading screen while Firebase determines auth state
+  if (!authReady) {
+    return (
+      <div className="min-h-[100dvh] grid place-items-center bg-slate-50 dark:bg-slate-950">
+        <div className="text-center">
+          <div className="grad-primary w-14 h-14 rounded-2xl grid place-items-center text-white text-xl shadow-lg shadow-indigo-500/30 mx-auto">
+            <i className="fa-solid fa-check-double fa-spin" />
+          </div>
+          <p className="mt-4 text-sm font-semibold text-slate-500 dark:text-slate-400">Loading TestHub CBT…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not signed in — show landing page
+  if (!user) {
+    return <LandingPage dark={dark} onToggleDark={() => setDark((d) => !d)} />;
+  }
+
+  // Signed in but pending or blocked
+  if (profile && (profile.status === 'pending' || profile.status === 'blocked')) {
+    return <PendingScreen user={user} profile={profile} onRefresh={refreshProfile} />;
+  }
+
   return (
     <>
+      {view === 'admin' && profile && isAdmin(profile.role) && (
+        <AdminPanel
+          me={user}
+          myProfile={profile}
+          dark={dark}
+          onToggleDark={() => setDark((d) => !d)}
+          onBack={() => go('dashboard')}
+          onProfile={() => setAccount(true)}
+        />
+      )}
+
       {view === 'dashboard' && (
         <Dashboard
           key={dashTab}
@@ -217,6 +285,9 @@ export default function App() {
           dark={dark}
           initialTab={dashTab}
           user={user}
+          isAdmin={!!profile && isAdmin(profile.role)}
+          pendingCount={pendingCount}
+          onAdmin={() => go('admin')}
           onProfile={() => setAccount(true)}
           onToggleDark={() => setDark((d) => !d)}
           onCreate={() => setCreating(true)}

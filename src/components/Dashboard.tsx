@@ -19,6 +19,9 @@ interface Props {
   onDeleteAttempt: (a: Attempt) => void;
   initialTab?: 'tests' | 'history';
   user: AccountUser | null;
+  isAdmin?: boolean;
+  pendingCount?: number;
+  onAdmin?: () => void;
   onProfile: () => void;
 }
 
@@ -50,6 +53,21 @@ export default function Dashboard(p: Props) {
             >
               <I n={p.dark ? 'sun' : 'moon'} className={p.dark ? 'text-amber-300' : 'text-slate-600'} />
             </button>
+            {p.isAdmin && (
+              <button
+                onClick={p.onAdmin}
+                title="Admin Panel"
+                aria-label="Admin Panel"
+                className="relative touch-target grid place-items-center rounded-xl hover:bg-slate-200/70 dark:hover:bg-slate-700/60 transition active:scale-90"
+              >
+                <I n="user-shield" className="text-indigo-500 dark:text-indigo-300" />
+                {p.pendingCount !== undefined && p.pendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold grid place-items-center ring-2 ring-white dark:ring-slate-800 animate-pop">
+                    {p.pendingCount > 9 ? '9+' : p.pendingCount}
+                  </span>
+                )}
+              </button>
+            )}
             <button
               onClick={p.onCreate}
               className="touch-target grad-primary text-white px-4 rounded-xl font-semibold text-sm flex items-center gap-2 shadow-lg shadow-indigo-500/25 hover:brightness-110 active:scale-95 transition"
