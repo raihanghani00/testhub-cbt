@@ -109,7 +109,7 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
             </div>
             <div className="flex items-center justify-center gap-3 sm:gap-4 shrink-0">
               <RingCircle value={ring} max={100} suffix="%" label="Accuracy" color="#10b981" size="sm:w-24 sm:h-24 w-20 h-20" />
-              <RingCircle value={pctRing} max={100} suffix="%ile" label="Percentile" color="#6366f1" size="sm:w-24 sm:h-24 w-20 h-20" />
+              <RingCircle value={pctRing} max={100} suffix="%" label="Percentile" color="#6366f1" size="sm:w-24 sm:h-24 w-20 h-20" />
             </div>
           </div>
         </section>
