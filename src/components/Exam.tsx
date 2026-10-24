@@ -376,7 +376,7 @@ export default function Exam({ test, resume, onSubmit, onExit }: Props) {
             <div key={q.id} className="max-w-4xl mx-auto p-3 sm:p-6 space-y-4 animate-fade-up">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className="grad-primary text-white text-sm font-extrabold px-3.5 py-1.5 rounded-xl shadow-md shadow-indigo-500/20 whitespace-nowrap shrink-0">Q {cur + 1}</span>
+                  <span className="grad-primary text-white text-sm font-extrabold px-3.5 py-1.5 rounded-xl shadow-md shadow-indigo-500/20 whitespace-nowrap shrink-0">Q {f.qi + 1}</span>
                   <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap truncate text-xs font-medium text-slate-500 dark:text-slate-400">{test.sections[sec].name} · {f.qi + 1}/{test.sections[sec].questions.length}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-bold shrink-0">
@@ -504,9 +504,9 @@ export default function Exam({ test, resume, onSubmit, onExit }: Props) {
                       key={qq.id}
                       onClick={() => goTo(gi)}
                       className="grid place-items-center min-h-[44px] active:scale-90 transition"
-                      aria-label={`Question ${gi + 1}: ${STATUS_META[qs[qq.id].status].label}`}
+                      aria-label={`Question ${i + 1}: ${STATUS_META[qs[qq.id].status].label}`}
                     >
-                      <StatusChip status={qs[qq.id].status} current={gi === cur}>{gi + 1}</StatusChip>
+                      <StatusChip status={qs[qq.id].status} current={gi === cur}>{i + 1}</StatusChip>
                     </button>
                   );
                 })}
