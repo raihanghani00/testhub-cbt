@@ -89,27 +89,29 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
         <section className="relative rounded-2xl overflow-hidden glass card-shadow-lg p-3 sm:p-5 animate-fade-up">
           <div className="absolute -top-16 -left-12 w-48 h-48 rounded-full bg-indigo-500/10 blur-3xl" />
           <div className="absolute -bottom-16 -right-8 w-48 h-48 rounded-full bg-emerald-400/10 blur-3xl" />
-          <div className="relative flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-stretch">
-            <div className="text-left flex-1 min-w-0">
-              <div className="flex items-center justify-start gap-2">
-                <PatternBadge pattern={a.pattern} />
-                <span className={`text-xs sm:text-sm font-bold ${verdict[1]}`}>{verdict[0]}</span>
+          <div className="relative space-y-3">
+            <div className="flex items-center gap-3 sm:gap-5">
+              <div className="text-left flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <PatternBadge pattern={a.pattern} />
+                  <span className={`text-xs sm:text-sm font-bold ${verdict[1]}`}>{verdict[0]}</span>
+                </div>
+                <div className="mt-1 text-[10px] sm:text-[11px] uppercase tracking-[0.18em] font-bold text-slate-500 dark:text-slate-400">Your score</div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="grad-text text-3xl sm:text-5xl font-black tracking-tight leading-none">{a.score}</span>
+                  <span className="text-base sm:text-2xl font-bold text-slate-400">/ {a.maxScore}</span>
+                </div>
               </div>
-              <div className="mt-1.5 text-[10px] sm:text-[11px] uppercase tracking-[0.18em] font-bold text-slate-500 dark:text-slate-400">Your score</div>
-              <div className="mt-0 flex items-baseline justify-start gap-1.5">
-                <span className="grad-text text-3xl sm:text-5xl font-black tracking-tight leading-none">{a.score}</span>
-                <span className="text-base sm:text-2xl font-bold text-slate-400">/ {a.maxScore}</span>
-              </div>
-              <div className="mt-2.5 sm:mt-3 flex flex-wrap justify-start gap-1.5 sm:gap-2">
-                <Pill icon="check" label={`${a.correct} Correct`} cls="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" />
-                <Pill icon="xmark" label={`${a.wrong} Wrong`} cls="bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" />
-                <Pill icon="minus" label={`${a.skipped} Skipped`} cls="bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200" />
-                <Pill icon="clock" label={fmtDuration(a.timeTaken)} cls="bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300" />
+              <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
+                <RingCircle value={pctRing} max={100} suffix="%" label="Percentile" color="#6366f1" size="w-16 h-16 sm:w-24 sm:h-24" />
+                <RingCircle value={ring} max={100} suffix="%" label="Accuracy" color="#10b981" size="w-16 h-16 sm:w-24 sm:h-24" />
               </div>
             </div>
-            <div className="flex items-center justify-center gap-3 sm:gap-4 shrink-0">
-              <RingCircle value={ring} max={100} suffix="%" label="Accuracy" color="#10b981" size="sm:w-24 sm:h-24 w-20 h-20" />
-              <RingCircle value={pctRing} max={100} suffix="%" label="Percentile" color="#6366f1" size="sm:w-24 sm:h-24 w-20 h-20" />
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-0.5">
+              <Pill icon="check" label={`${a.correct} Correct`} cls="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" />
+              <Pill icon="xmark" label={`${a.wrong} Wrong`} cls="bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" />
+              <Pill icon="minus" label={`${a.skipped} Skipped`} cls="bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200" />
+              <Pill icon="clock" label={fmtDuration(a.timeTaken)} cls="bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300" />
             </div>
           </div>
         </section>
@@ -265,11 +267,11 @@ function Pill({ icon, label, cls }: { icon: string; label: string; cls: string }
 function RingCircle({ value, max, suffix, label, color, size }: { value: number; max: number; suffix: string; label: string; color: string; size: string }) {
   const deg = (value / max) * 360;
   return (
-    <div className={`relative ${size} rounded-full grid place-items-center`} style={{ background: `conic-gradient(${color} ${deg}deg, rgba(148,163,184,0.22) 0deg)` }}>
-      <div className="absolute inset-2 rounded-full bg-white dark:bg-slate-800 grid place-items-center shadow-inner">
+    <div className={`relative ${size} rounded-full grid place-items-center shrink-0`} style={{ background: `conic-gradient(${color} ${deg}deg, rgba(148,163,184,0.22) 0deg)` }}>
+      <div className="absolute inset-1.5 sm:inset-2 rounded-full bg-white dark:bg-slate-800 grid place-items-center shadow-inner">
         <div className="text-center">
-          <div className="text-lg sm:text-xl font-black tabular-nums leading-none">{value}<span className="text-[10px] sm:text-xs text-slate-400 font-bold">{suffix}</span></div>
-          <div className="text-[8px] sm:text-[9px] uppercase tracking-[0.1em] font-bold text-slate-500 dark:text-slate-400 mt-0.5">{label}</div>
+          <div className="text-sm sm:text-xl font-black tabular-nums leading-none">{value}<span className="text-[9px] sm:text-xs text-slate-400 font-bold">{suffix}</span></div>
+          <div className="text-[7px] sm:text-[9px] uppercase tracking-[0.08em] sm:tracking-[0.1em] font-bold text-slate-500 dark:text-slate-400 mt-0.5">{label}</div>
         </div>
       </div>
     </div>
