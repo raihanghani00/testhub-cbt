@@ -222,14 +222,14 @@ Exp: Factorise as $(x-2)(x-3)$.`}</pre>
           <div className="flex flex-row items-center gap-2 mb-2 overflow-x-auto thin-scroll">
             <span className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 shrink-0">Questions</span>
             <input ref={fileRef} type="file" accept={jsonOnly ? '.json,application/json' : '.txt,.json,text/plain,application/json'} className="hidden" onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = ''; }} />
-            <button onClick={() => fileRef.current?.click()} className="touch-target shrink-0 text-xs px-2 py-1.5 rounded-lg font-semibold border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
-              <I n="upload" className="mr-1 text-indigo-500" />{jsonOnly ? '.json' : 'File'}
-            </button>
             {!jsonOnly && (
             <button onClick={loadSample} className="touch-target shrink-0 text-xs px-2 py-1.5 rounded-lg font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 transition">
               <I n="wand-magic-sparkles" className="mr-1" />Sample
             </button>
             )}
+            <button onClick={() => fileRef.current?.click()} className="touch-target shrink-0 text-xs px-2 py-1.5 rounded-lg font-semibold border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+              <I n="upload" className="mr-1 text-indigo-500" />Upload {jsonOnly ? '.json' : 'File'}
+            </button>
             {(raw || fileName) && (
               <button onClick={clearAll} className="touch-target shrink-0 text-xs px-2 py-1.5 rounded-lg font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/25 transition animate-fade">
                 <I n="eraser" className="mr-1" />Clear
