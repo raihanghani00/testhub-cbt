@@ -27,14 +27,24 @@ interface Props {
 
 export default function Dashboard(p: Props) {
   const [tab, setTab] = useState<'tests' | 'history'>(p.initialTab ?? 'tests');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const sortedAttempts = useMemo(() => [...p.attempts].sort((a, b) => b.date - a.date), [p.attempts]);
+  const filteredTests = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return p.tests;
+    return p.tests.filter((t) =>
+      t.title.toLowerCase().includes(q) ||
+      t.sections.some((s) => s.name.toLowerCase().includes(q)),
+    );
+  }, [p.tests, search]);
 
   return (
     <div className="min-h-[100dvh] dot-grid">
       {/* Header */}
       <header className="sticky top-0 z-30 glass">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className="grad-primary w-10 h-10 rounded-xl grid place-items-center text-white shadow-lg shadow-indigo-500/30">
               <I n="check-double" />
             </div>
@@ -154,14 +164,48 @@ export default function Dashboard(p: Props) {
               </button>
             ))}
           </div>
+          <button
+            onClick={() => { setSearchOpen((v) => !v); if (searchOpen) setSearch(''); }}
+            aria-label="Search mock tests"
+            aria-expanded={searchOpen}
+            className={`touch-target w-11 h-11 grid place-items-center rounded-2xl glass card-shadow transition active:scale-90 ${searchOpen ? 'grad-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'}`}
+          >
+            <I n={searchOpen ? 'xmark' : 'magnifying-glass'} className="text-sm" />
+          </button>
         </div>
+
+        {searchOpen && (
+          <div className="mt-3 animate-fade-up">
+            <div className="relative">
+              <I n="magnifying-glass" className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search mock tests by name..."
+                className="w-full h-12 pl-11 pr-10 rounded-2xl glass card-shadow text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/40 placeholder:text-slate-400"
+              />
+              {search && (
+                <button
+                  onClick={() => { setSearch(''); }}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 grid place-items-center rounded-lg text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                >
+                  <I n="xmark" className="text-xs" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {tab === 'tests' ? (
           p.tests.length === 0 ? (
             <Empty icon="folder-open" title="No tests yet" text="Import a .txt file or load the sample to create your first mock test." action="Create a test" onAction={p.onCreate} />
+          ) : filteredTests.length === 0 ? (
+            <Empty icon="magnifying-glass" title="No matches found" text={`No mock tests match "${search}". Try a different name or subject.`} />
           ) : (
             <div className="mt-5 grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {p.tests.map((t, i) => (
+              {filteredTests.map((t, i) => (
                 <TestCard key={t.id} {...p} test={t} index={i} />
               ))}
             </div>
@@ -263,8 +307,8 @@ function TestCard({
           )}
         </div>
       </div>
-      <h3 className="mt-3 text-lg font-bold leading-snug line-clamp-2 min-h-[3.2rem]">{test.title}</h3>
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <h3 className="mt-2 text-lg font-bold leading-snug line-clamp-2">{test.title}</h3>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
         {test.sections.map((s) => (
           <span key={s.name} className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300">
             {s.name} · {s.questions.length}
@@ -273,7 +317,7 @@ function TestCard({
       </div>
 
       {last && (
-        <div className="mt-4 flex items-center justify-between rounded-2xl px-3.5 py-2.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
+        <div className="mt-3 flex items-center justify-between rounded-2xl px-3.5 py-2.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
           <div className="text-xs">
             <div className="text-emerald-700 dark:text-emerald-300 font-semibold">Last attempt</div>
             <div className="text-slate-500 dark:text-slate-400">{fmtDate(last.date)}</div>
@@ -285,7 +329,7 @@ function TestCard({
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         {stats.map(([l, v, ic]) => (
           <div key={l} className="rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/50 py-2.5 text-center">
             <I n={ic} className="text-[11px] text-indigo-500" />
@@ -295,7 +339,7 @@ function TestCard({
         ))}
       </div>
 
-      <div className="mt-5 flex items-center gap-2 pt-1 mt-auto">
+      <div className="mt-4 flex items-center gap-2 pt-1 mt-auto">
         <button
           onClick={() => onStart(test)}
           className={`touch-target flex-1 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.97] transition ${paused ? 'bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25' : 'grad-primary shadow-lg shadow-indigo-500/25'}`}
