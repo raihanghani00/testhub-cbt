@@ -7,11 +7,12 @@ import { SAMPLE_TXT } from '../lib/sample';
 interface Props {
   onClose: () => void;
   onCreate: (t: Test) => void;
+  jsonOnly?: boolean;
 }
 
 const field = 'w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900/60 px-3.5 h-11 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition disabled:opacity-40';
 
-export default function CreateModal({ onClose, onCreate }: Props) {
+export default function CreateModal({ onClose, onCreate, jsonOnly }: Props) {
   const [title, setTitle] = useState('');
   const [pattern, setPattern] = useState<Pattern>('TCS');
   const [duration, setDuration] = useState('60');
@@ -115,8 +116,8 @@ export default function CreateModal({ onClose, onCreate }: Props) {
         <div className="flex items-center gap-3">
           <div className="grad-primary w-10 h-10 rounded-xl grid place-items-center text-white"><I n="file-circle-plus" /></div>
           <div className="leading-tight">
-            <h2 className="font-extrabold text-lg">Create / Import Test</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Upload a .txt or .json file, or paste your questions</p>
+            <h2 className="font-extrabold text-lg">{jsonOnly ? 'Load Test File' : 'Create / Import Test'}</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{jsonOnly ? 'Upload a .json test file shared by your teacher' : 'Upload a .txt or .json file, or paste your questions'}</p>
           </div>
         </div>
         <button onClick={onClose} aria-label="Close" className="touch-target grid place-items-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700">
@@ -126,6 +127,7 @@ export default function CreateModal({ onClose, onCreate }: Props) {
 
       <div className="flex-1 overflow-y-auto thin-scroll px-5 sm:px-7 py-5 space-y-5">
         {/* Format guide */}
+        {!jsonOnly && (
         <div className="rounded-2xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-indigo-500/10 overflow-hidden">
           <button onClick={() => setGuide((g) => !g)} className="w-full flex items-center justify-between px-4 min-h-[48px] text-sm font-bold text-indigo-700 dark:text-indigo-300">
             <span><I n="book-open" className="mr-2" />TXT format guide</span>
@@ -162,9 +164,10 @@ Exp: Factorise as $(x-2)(x-3)$.`}</pre>
             </div>
           )}
         </div>
+        )}
 
         {/* Form */}
-        <div className="grid sm:grid-cols-2 gap-4">
+        {!jsonOnly && (<div className="grid sm:grid-cols-2 gap-4">
           <Label text="Test title" className="sm:col-span-2">
             <input className={field} placeholder="e.g. SSC CGL Tier-I Mock 05" value={title} onChange={(e) => { setTitle(e.target.value); setTitleAuto(false); }} />
           </Label>
@@ -198,18 +201,21 @@ Exp: Factorise as $(x-2)(x-3)$.`}</pre>
             <input type="number" min={0} step="0.25" className={field} value={neg} onChange={(e) => setNeg(e.target.value)} />
           </Label>
         </div>
+        )}
 
         {/* Input */}
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mr-auto">Questions</span>
-            <input ref={fileRef} type="file" accept=".txt,.json,text/plain,application/json" className="hidden" onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = ''; }} />
+            <input ref={fileRef} type="file" accept={jsonOnly ? '.json,application/json' : '.txt,.json,text/plain,application/json'} className="hidden" onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = ''; }} />
             <button onClick={() => fileRef.current?.click()} className="touch-target px-4 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
-              <I n="upload" className="mr-2 text-indigo-500" />Upload file
+              <I n="upload" className="mr-2 text-indigo-500" />Upload {jsonOnly ? '.json' : 'file'}
             </button>
+            {!jsonOnly && (
             <button onClick={loadSample} className="touch-target px-4 rounded-xl text-sm font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 transition">
               <I n="wand-magic-sparkles" className="mr-2" />Load sample data
             </button>
+            )}
             {(raw || fileName) && (
               <button onClick={clearAll} className="touch-target px-4 rounded-xl text-sm font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/25 transition animate-fade">
                 <I n="eraser" className="mr-2" />Clear
@@ -225,6 +231,7 @@ Exp: Factorise as $(x-2)(x-3)$.`}</pre>
             <I n="circle-info" className="mr-1" />A teacher’s <b>.json</b> test file is imported instantly with its fixed timing and marks — no editing needed.
           </p>
           {fileName && <div className="text-xs text-slate-500 mb-2"><I n="paperclip" className="mr-1" />{fileName}</div>}
+          {!jsonOnly && (
           <textarea
             value={raw}
             onChange={(e) => { setJsonError(''); setRaw(e.target.value); }}
@@ -240,6 +247,7 @@ Exp: Factorise as $(x-2)(x-3)$.`}</pre>
             placeholder={'[SECTION: General]\n\nQ1. Your question here?\nA) Option 1\nB) Option 2\nC) Option 3\nD) Option 4\nAns: B\nExp: Because...'}
             className="w-full h-48 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900/60 p-4 text-[13px] font-mono leading-relaxed outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 thin-scroll resize-y"
           />
+          )}
         </div>
 
         {/* Live preview */}
@@ -283,7 +291,7 @@ Exp: Factorise as $(x-2)(x-3)$.`}</pre>
           disabled={!total}
           className="touch-target px-6 rounded-xl text-sm font-bold text-white grad-primary shadow-lg shadow-indigo-500/25 disabled:opacity-40 disabled:shadow-none hover:brightness-110 active:scale-95 transition"
         >
-          <I n="circle-plus" className="mr-2" />Create test
+          <I n="circle-plus" className="mr-2" />{jsonOnly ? 'Load test' : 'Create test'}
         </button>
       </div>
     </Modal>

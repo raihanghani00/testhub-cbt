@@ -4,6 +4,7 @@ import { I, PatternBadge } from './ui';
 import { fmtClock, fmtDate, fmtDuration, maxMarks, totalMinutes, totalQuestions } from '../lib/utils';
 import { hasProgress, loadProgress } from '../lib/storage';
 import { Avatar, type AccountUser } from './AccountModal';
+import type { Role } from '../lib/roles';
 
 interface Props {
   tests: Test[];
@@ -19,6 +20,7 @@ interface Props {
   onDeleteAttempt: (a: Attempt) => void;
   initialTab?: 'tests' | 'history';
   user: AccountUser | null;
+  role?: Role;
   isAdmin?: boolean;
   pendingCount?: number;
   onAdmin?: () => void;
@@ -114,25 +116,39 @@ export default function Dashboard(p: Props) {
                 <I n="bolt" className="text-amber-300" /> TCS iON &amp; Eduquity style engine
               </span>
               <h1 className="mt-4 text-3xl sm:text-5xl font-black tracking-tight leading-[1.08]">
-                Upload .TXT Questions <span className="text-sky-200">→</span> Instant Test Form
+                {p.role === 'student' ? (
+                  <>Welcome to your <span className="text-sky-200">Student Portal</span></>
+                ) : (
+                  <>Upload .TXT Questions <span className="text-sky-200">→</span> Instant Test Form</>
+                )}
               </h1>
               <p className="mt-4 text-white/80 max-w-xl text-sm sm:text-base">
-                Turn a plain text file into a full-length computer-based mock test with timers, sections, review marking and a deep performance report.
+                {p.role === 'student'
+                  ? 'Ready to practice? Select a mock test below or load a .json test file provided by your teacher to begin.'
+                  : 'Turn a plain text file into a full-length computer-based mock test with timers, sections, review marking and a deep performance report.'}
               </p>
               <button
                 onClick={p.onCreate}
                 className="mt-5 sm:mt-7 touch-target inline-flex items-center gap-2.5 bg-white text-indigo-700 font-bold px-6 rounded-2xl shadow-xl hover:scale-[1.03] active:scale-95 transition"
               >
-                <I n="file-import" /> Import Questions
+                <I n="file-import" /> {p.role === 'student' ? 'Load Test File (.JSON)' : 'Import Questions'}
               </button>
             </div>
             <ul className="hidden md:grid md:grid-cols-2 lg:grid-cols-1 gap-2.5">
-              {[
-                ['square-root-variable', 'KaTeX math rendering', 'Write $x^2$ or $$\\frac{a}{b}$$ directly'],
-                ['layer-group', 'TCS & Eduquity patterns', 'Global or sectional timers'],
-                ['floppy-disk', 'Auto-save & resume', 'Pause any time, continue later'],
-                ['chart-line', 'Deep analytics', 'Sectional scores, time & solutions'],
-              ].map(([ic, t, d]) => (
+              {(p.role === 'student'
+                ? [
+                    ['rocket', 'Practice mock tests', 'Start any test shared with you'],
+                    ['file-import', 'Load teacher .json', 'Import a ready-made test file'],
+                    ['floppy-disk', 'Auto-save & resume', 'Pause any time, continue later'],
+                    ['chart-line', 'Deep analytics', 'Sectional scores, time & solutions'],
+                  ]
+                : [
+                    ['square-root-variable', 'KaTeX math rendering', 'Write $x^2$ or $\\frac{a}{b}$ directly'],
+                    ['layer-group', 'TCS & Eduquity patterns', 'Global or sectional timers'],
+                    ['floppy-disk', 'Auto-save & resume', 'Pause any time, continue later'],
+                    ['chart-line', 'Deep analytics', 'Sectional scores, time & solutions'],
+                  ]
+              ).map(([ic, t, d]) => (
                 <li key={t} className="flex items-center gap-3 rounded-2xl bg-white/10 border border-white/15 backdrop-blur px-4 py-3">
                   <span className="grid place-items-center w-9 h-9 rounded-xl bg-white/20 text-sm shrink-0"><I n={ic} /></span>
                   <span className="leading-tight">

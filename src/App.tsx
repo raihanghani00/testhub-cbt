@@ -283,6 +283,7 @@ export default function App() {
           initialTab={dashTab}
           user={user}
           isAdmin={!!profile && isAdmin(profile.role)}
+          role={profile?.role}
           pendingCount={pendingCount}
           onAdmin={() => go('admin')}
           onProfile={() => setAccount(true)}
@@ -343,6 +344,7 @@ export default function App() {
 
       {creating && (
         <CreateModal
+          jsonOnly={!!profile && profile.role === 'student'}
           onClose={() => setCreating(false)}
           onCreate={(t) => {
             updateTests([t, ...tests]);
