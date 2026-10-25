@@ -41,12 +41,16 @@ export function sectionSeconds(t: Test): number[] {
 }
 
 /** initial timers array: single global timer for TCS, one per section for Eduquity */
+export function isSectionLocked(t: Test): boolean {
+  return t.pattern === 'Eduquity' || (t.pattern !== 'TCS' && t.sectionDuration > 0);
+}
+
 export function initialTimers(t: Test): number[] {
-  return t.pattern === 'TCS' ? [Math.max(1, Math.round(t.duration * 60))] : sectionSeconds(t);
+  return !isSectionLocked(t) ? [Math.max(1, Math.round(t.duration * 60))] : sectionSeconds(t);
 }
 
 export function totalMinutes(t: Test): number {
-  return t.pattern === 'TCS'
+  return !isSectionLocked(t)
     ? t.duration
     : Math.round(sectionSeconds(t).reduce((a, b) => a + b, 0) / 60);
 }

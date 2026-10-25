@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Attempt, QMap, Test } from '../types';
 import { I, Modal, PatternBadge, RichText, Toast, ZoomImg } from './ui';
 import { StatusChip, STATUS_META } from './status';
-import { LETTERS, computeAttempt, fmtTime, initialTimers } from '../lib/utils';
+import { LETTERS, computeAttempt, fmtTime, initialTimers, isSectionLocked } from '../lib/utils';
 import { getName, loadProgress, saveProgress } from '../lib/storage';
 import { clearProgressEverywhere, isSignedIn, pushProgress } from '../lib/cloud';
 
@@ -16,7 +16,7 @@ interface Props {
 type ModalKind = null | 'pause' | 'submit' | 'section';
 
 export default function Exam({ test, resume, onSubmit, onExit }: Props) {
-  const edu = test.pattern === 'Eduquity';
+  const edu = isSectionLocked(test);
   const candidate = useMemo(() => getName(), []);
 
   const flat = useMemo(

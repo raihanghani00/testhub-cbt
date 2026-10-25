@@ -196,7 +196,7 @@ export function parseJson(raw: string): ParseResult {
   const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : undefined);
   const st = (root.settings ?? root) as AnyObj;
   const settings: TestSettings = {
-    pattern: st.pattern === 'TCS' || st.pattern === 'Eduquity' ? st.pattern : undefined,
+    pattern: typeof st.pattern === 'string' && st.pattern.trim() ? st.pattern.trim() : undefined,
     duration: num(st.duration),
     sectionDuration: num(st.sectionDuration),
     pos: num(st.pos ?? st.positiveMarks),

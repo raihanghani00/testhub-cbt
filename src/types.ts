@@ -1,4 +1,4 @@
-export type Pattern = 'TCS' | 'Eduquity';
+export type Pattern = 'TCS' | 'Eduquity' | (string & {});
 
 export interface Opt {
   text: string;

@@ -14,7 +14,8 @@ const field = 'w-full rounded-xl border border-slate-200 dark:border-slate-600 b
 
 export default function CreateModal({ onClose, onCreate, jsonOnly }: Props) {
   const [title, setTitle] = useState('');
-  const [pattern, setPattern] = useState<Pattern>('TCS');
+  const [patternKey, setPatternKey] = useState<'TCS' | 'Eduquity' | 'Custom'>('TCS');
+  const [customPattern, setCustomPattern] = useState('');
   const [duration, setDuration] = useState('60');
   const [secDur, setSecDur] = useState('20');
   const [pos, setPos] = useState('2');
@@ -30,6 +31,10 @@ export default function CreateModal({ onClose, onCreate, jsonOnly }: Props) {
 
   const num = (v: string, d: number) => { const n = parseFloat(v); return Number.isFinite(n) && n >= 0 ? n : d; };
   const finalTitle = title.trim() || parsed?.title || '';
+  const sectionLocked = patternKey === 'Eduquity' || (patternKey === 'Custom' && num(secDur, 0) > 0);
+  const resolvedPattern: Pattern = patternKey === 'Custom'
+    ? (customPattern.trim() || 'Custom')
+    : patternKey;
 
   const [jsonError, setJsonError] = useState('');
 
@@ -99,9 +104,9 @@ export default function CreateModal({ onClose, onCreate, jsonOnly }: Props) {
       buildTest(
         {
           title: finalTitle || 'Untitled Mock Test',
-          pattern,
+          pattern: resolvedPattern,
           duration: dur,
-          sectionDuration: pattern === 'Eduquity' ? Math.max(1, num(secDur, 20)) : 0,
+          sectionDuration: sectionLocked ? Math.max(1, num(secDur, 20)) : 0,
           pos: num(pos, 1),
           neg: num(neg, 0),
         },
@@ -172,27 +177,36 @@ Exp: Factorise as $(x-2)(x-3)$.`}</pre>
             <input className={field} placeholder="e.g. SSC CGL Tier-I Mock 05" value={title} onChange={(e) => { setTitle(e.target.value); setTitleAuto(false); }} />
           </Label>
           <Label text="Exam pattern" className="sm:col-span-2">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {([
-                ['TCS', 'Single global timer, free navigation', 'stopwatch'],
-                ['Eduquity', 'Timed sections, locked after submit', 'layer-group'],
-              ] as const).map(([k, d, ic]) => (
+                ['TCS', 'stopwatch'],
+                ['Eduquity', 'layer-group'],
+                ['Custom', 'sliders'],
+              ] as const).map(([k, ic]) => (
                 <button
                   key={k}
-                  onClick={() => setPattern(k)}
-                  className={`text-left rounded-xl border-2 p-3 transition ${pattern === k ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300'}`}
+                  onClick={() => setPatternKey(k)}
+                  className={`text-center rounded-xl border-2 py-2 px-3 transition ${patternKey === k ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300'}`}
                 >
-                  <div className="font-bold text-sm flex items-center gap-2"><I n={ic} className={pattern === k ? 'text-indigo-500' : 'text-slate-400'} />{k}</div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{d}</div>
+                  <div className="font-bold text-xs flex items-center justify-center gap-1.5"><I n={ic} className={patternKey === k ? 'text-indigo-500' : 'text-slate-400'} />{k}</div>
                 </button>
               ))}
             </div>
+            {patternKey === 'Custom' && (
+              <input
+                className={`${field} mt-2`}
+                placeholder="Enter pattern name (e.g., Banking, SSC)"
+                value={customPattern}
+                onChange={(e) => setCustomPattern(e.target.value)}
+                maxLength={24}
+              />
+            )}
           </Label>
-          <Label text={pattern === 'TCS' ? 'Total duration (min)' : 'Total duration (min) — fallback'}>
+          <Label text={!sectionLocked ? 'Total duration (min)' : 'Total duration (min) — fallback'}>
             <input type="number" min={1} className={field} value={duration} onChange={(e) => setDuration(e.target.value)} />
           </Label>
           <Label text="Sectional duration (min)">
-            <input type="number" min={1} className={field} disabled={pattern !== 'Eduquity'} value={secDur} onChange={(e) => setSecDur(e.target.value)} />
+            <input type="number" min={1} className={field} disabled={!sectionLocked} value={secDur} onChange={(e) => setSecDur(e.target.value)} />
           </Label>
           <Label text="Positive marks">
             <input type="number" min={0} step="0.25" className={field} value={pos} onChange={(e) => setPos(e.target.value)} />
@@ -205,20 +219,20 @@ Exp: Factorise as $(x-2)(x-3)$.`}</pre>
 
         {/* Input */}
         <div>
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mr-auto">Questions</span>
+          <div className="flex flex-row items-center gap-2 mb-2 overflow-x-auto thin-scroll">
+            <span className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 shrink-0">Questions</span>
             <input ref={fileRef} type="file" accept={jsonOnly ? '.json,application/json' : '.txt,.json,text/plain,application/json'} className="hidden" onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = ''; }} />
-            <button onClick={() => fileRef.current?.click()} className="touch-target px-4 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
-              <I n="upload" className="mr-2 text-indigo-500" />Upload {jsonOnly ? '.json' : 'file'}
+            <button onClick={() => fileRef.current?.click()} className="touch-target shrink-0 text-xs px-2 py-1.5 rounded-lg font-semibold border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+              <I n="upload" className="mr-1 text-indigo-500" />{jsonOnly ? '.json' : 'File'}
             </button>
             {!jsonOnly && (
-            <button onClick={loadSample} className="touch-target px-4 rounded-xl text-sm font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 transition">
-              <I n="wand-magic-sparkles" className="mr-2" />Load sample data
+            <button onClick={loadSample} className="touch-target shrink-0 text-xs px-2 py-1.5 rounded-lg font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 transition">
+              <I n="wand-magic-sparkles" className="mr-1" />Sample
             </button>
             )}
             {(raw || fileName) && (
-              <button onClick={clearAll} className="touch-target px-4 rounded-xl text-sm font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/25 transition animate-fade">
-                <I n="eraser" className="mr-2" />Clear
+              <button onClick={clearAll} className="touch-target shrink-0 text-xs px-2 py-1.5 rounded-lg font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/25 transition animate-fade">
+                <I n="eraser" className="mr-1" />Clear
               </button>
             )}
           </div>

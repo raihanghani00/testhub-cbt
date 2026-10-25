@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Status, Test } from '../types';
 import { I, PatternBadge } from './ui';
 import { StatusChip, STATUS_META } from './status';
-import { fmtDuration, maxMarks, sectionSeconds, totalMinutes, totalQuestions } from '../lib/utils';
+import { fmtDuration, maxMarks, sectionSeconds, totalMinutes, totalQuestions, isSectionLocked } from '../lib/utils';
 import { getName, loadProgress, setName } from '../lib/storage';
 
 interface Props {
@@ -18,7 +18,7 @@ export default function Instructions({ test, onBack, onBegin, onResume }: Props)
   const prog = loadProgress(test.id);
   const answered = prog ? Object.values(prog.qs).filter((s) => s.sel !== null).length : 0;
   const secT = sectionSeconds(test);
-  const edu = test.pattern === 'Eduquity';
+  const edu = isSectionLocked(test);
 
   const stats = [
     ['Total Questions', totalQuestions(test), 'circle-question', 'text-indigo-600 bg-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300'],
