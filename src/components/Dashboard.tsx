@@ -146,8 +146,8 @@ export default function Dashboard(p: Props) {
         </section>
 
         {/* Tabs */}
-        <div id="mock-tests" className="mt-8 scroll-mt-20 flex items-center justify-between gap-3">
-          <div className="inline-flex p-1 rounded-2xl glass card-shadow">
+        <div id="mock-tests" className="mt-8 scroll-mt-20 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="inline-flex p-1 rounded-2xl glass card-shadow shrink-0">
             {([
               ['tests', 'Mock Tests', 'rectangle-list', p.tests.length],
               ['history', 'Test History', 'clock-rotate-left', p.attempts.length],
@@ -155,12 +155,12 @@ export default function Dashboard(p: Props) {
               <button
                 key={k}
                 onClick={() => setTab(k)}
-                className={`touch-target px-4 sm:px-5 rounded-xl text-sm font-semibold flex items-center gap-2 transition ${
+                className={`touch-target px-3 py-2 text-xs sm:px-4 sm:text-sm rounded-xl font-semibold flex items-center gap-1.5 sm:gap-2 whitespace-nowrap transition ${
                   tab === k ? 'grad-primary text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'
                 }`}
               >
-                <I n={ic} className="text-xs" /> {label}
-                <span className={`text-[11px] px-1.5 py-0.5 rounded-md ${tab === k ? 'bg-white/25' : 'bg-slate-200 dark:bg-slate-700'}`}>{n}</span>
+                <I n={ic} className="text-xs" /> <span className="whitespace-nowrap">{label}</span>
+                <span className={`text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded-md ${tab === k ? 'bg-white/25' : 'bg-slate-200 dark:bg-slate-700'}`}>{n}</span>
               </button>
             ))}
           </div>
@@ -168,7 +168,7 @@ export default function Dashboard(p: Props) {
             onClick={() => { setSearchOpen((v) => !v); if (searchOpen) setSearch(''); }}
             aria-label="Search mock tests"
             aria-expanded={searchOpen}
-            className={`touch-target w-11 h-11 grid place-items-center rounded-2xl glass card-shadow transition active:scale-90 ${searchOpen ? 'grad-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'}`}
+            className={`touch-target w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-2xl glass card-shadow transition active:scale-90 ${searchOpen ? 'grad-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/50'}`}
           >
             <I n={searchOpen ? 'xmark' : 'magnifying-glass'} className="text-sm" />
           </button>
