@@ -20,8 +20,13 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
   const [ring, setRing] = useState(0);
   const [pctRing, setPctRing] = useState(0);
 
-  const pct = a.maxScore > 0 ? (a.score / a.maxScore) * 100 : 0;
-  const percentile = Math.min(99.9, Math.max(1, Math.round(50 + (pct / 100) * 49)));
+  const pct = a.maxScore > 0 ? Math.max(0, Math.min(100, (a.score / a.maxScore) * 100)) : 0;
+  const percentile = (() => {
+    if (pct <= 0) return 1;
+    if (pct < 30) return Math.max(1, Math.round(pct * 1.2));
+    if (pct < 70) return Math.round(36 + ((pct - 30) / 40) * (85 - 36));
+    return Math.round(85 + ((pct - 70) / 30) * (99 - 85));
+  })();
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -90,13 +95,13 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
           <div className="absolute -top-16 -left-12 w-48 h-48 rounded-full bg-indigo-500/10 blur-3xl" />
           <div className="absolute -bottom-16 -right-8 w-48 h-48 rounded-full bg-emerald-400/10 blur-3xl" />
           <div className="relative space-y-3">
+            <div className="w-full flex items-center gap-2">
+              <PatternBadge pattern={a.pattern} />
+              <span className={`text-xs sm:text-sm font-bold whitespace-nowrap ${verdict[1]}`}>{verdict[0]}</span>
+            </div>
             <div className="flex items-center gap-3 sm:gap-5">
               <div className="text-left flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <PatternBadge pattern={a.pattern} />
-                  <span className={`text-xs sm:text-sm font-bold ${verdict[1]}`}>{verdict[0]}</span>
-                </div>
-                <div className="mt-1.5 text-[11px] sm:text-xs uppercase tracking-[0.2em] font-extrabold text-slate-600 dark:text-slate-300">Your score</div>
+                <div className="mt-0 text-[11px] sm:text-xs uppercase tracking-[0.2em] font-extrabold text-slate-600 dark:text-slate-300">Your score</div>
                 <div className="mt-0.5 flex items-baseline gap-2">
                   <span className="grad-text text-4xl sm:text-6xl font-black tracking-tight leading-none">{a.score}</span>
                   <span className="text-lg sm:text-3xl font-bold text-slate-400">/ {a.maxScore}</span>
@@ -107,11 +112,11 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
                 <RingCircle value={ring} max={100} suffix="%" label="Accuracy" color="#10b981" size="w-20 h-20 sm:w-28 sm:h-28" />
               </div>
             </div>
-            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-0.5">
-              <Pill icon="check" label={`${a.correct} Correct`} cls="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" />
-              <Pill icon="xmark" label={`${a.wrong} Wrong`} cls="bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" />
-              <Pill icon="minus" label={`${a.skipped} Skipped`} cls="bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200" />
-              <Pill icon="clock" label={fmtDuration(a.timeTaken)} cls="bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300" />
+            <div className="grid grid-cols-4 gap-1 sm:gap-2 w-full">
+              <Pill icon="check" label={`${a.correct} Correct`} cls="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" compact />
+              <Pill icon="xmark" label={`${a.wrong} Wrong`} cls="bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" compact />
+              <Pill icon="minus" label={`${a.skipped} Skip`} cls="bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200" compact />
+              <Pill icon="clock" label={fmtDuration(a.timeTaken)} cls="bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300" compact />
             </div>
           </div>
         </section>
@@ -256,10 +261,10 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
   );
 }
 
-function Pill({ icon, label, cls }: { icon: string; label: string; cls: string }) {
+function Pill({ icon, label, cls, compact }: { icon: string; label: string; cls: string; compact?: boolean }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${cls}`}>
-      <I n={icon} className="text-xs" /> {label}
+    <span className={`inline-flex items-center justify-center gap-1 rounded-full font-bold ${compact ? 'px-1.5 py-1 text-[10px] sm:text-xs truncate' : 'gap-1.5 px-2.5 py-1 text-xs'} ${cls}`}>
+      <I n={icon} className="text-[10px] shrink-0" /> <span className="truncate">{label}</span>
     </span>
   );
 }
