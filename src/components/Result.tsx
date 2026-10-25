@@ -96,15 +96,15 @@ export default function Result({ attempt: a, fromHistory, onHome, onMockTests, o
                   <PatternBadge pattern={a.pattern} />
                   <span className={`text-xs sm:text-sm font-bold ${verdict[1]}`}>{verdict[0]}</span>
                 </div>
-                <div className="mt-1 text-[10px] sm:text-[11px] uppercase tracking-[0.18em] font-bold text-slate-500 dark:text-slate-400">Your score</div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="grad-text text-3xl sm:text-5xl font-black tracking-tight leading-none">{a.score}</span>
-                  <span className="text-base sm:text-2xl font-bold text-slate-400">/ {a.maxScore}</span>
+                <div className="mt-1.5 text-[11px] sm:text-xs uppercase tracking-[0.2em] font-extrabold text-slate-600 dark:text-slate-300">Your score</div>
+                <div className="mt-0.5 flex items-baseline gap-2">
+                  <span className="grad-text text-4xl sm:text-6xl font-black tracking-tight leading-none">{a.score}</span>
+                  <span className="text-lg sm:text-3xl font-bold text-slate-400">/ {a.maxScore}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
-                <RingCircle value={pctRing} max={100} suffix="%" label="Percentile" color="#6366f1" size="w-16 h-16 sm:w-24 sm:h-24" />
-                <RingCircle value={ring} max={100} suffix="%" label="Accuracy" color="#10b981" size="w-16 h-16 sm:w-24 sm:h-24" />
+              <div className="flex items-start gap-3 sm:gap-6 shrink-0">
+                <RingCircle value={pctRing} max={100} suffix="%" label="Percentile" color="#6366f1" size="w-20 h-20 sm:w-28 sm:h-28" />
+                <RingCircle value={ring} max={100} suffix="%" label="Accuracy" color="#10b981" size="w-20 h-20 sm:w-28 sm:h-28" />
               </div>
             </div>
             <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-0.5">
@@ -267,13 +267,13 @@ function Pill({ icon, label, cls }: { icon: string; label: string; cls: string }
 function RingCircle({ value, max, suffix, label, color, size }: { value: number; max: number; suffix: string; label: string; color: string; size: string }) {
   const deg = (value / max) * 360;
   return (
-    <div className={`relative ${size} rounded-full grid place-items-center shrink-0`} style={{ background: `conic-gradient(${color} ${deg}deg, rgba(148,163,184,0.22) 0deg)` }}>
-      <div className="absolute inset-1.5 sm:inset-2 rounded-full bg-white dark:bg-slate-800 grid place-items-center shadow-inner">
-        <div className="text-center">
-          <div className="text-sm sm:text-xl font-black tabular-nums leading-none">{value}<span className="text-[9px] sm:text-xs text-slate-400 font-bold">{suffix}</span></div>
-          <div className="text-[7px] sm:text-[9px] uppercase tracking-[0.08em] sm:tracking-[0.1em] font-bold text-slate-500 dark:text-slate-400 mt-0.5">{label}</div>
+    <div className="flex flex-col items-center shrink-0">
+      <div className={`relative ${size} rounded-full grid place-items-center`} style={{ background: `conic-gradient(${color} ${deg}deg, rgba(148,163,184,0.22) 0deg)` }}>
+        <div className="absolute inset-2 sm:inset-2.5 rounded-full bg-white dark:bg-slate-800 grid place-items-center shadow-inner">
+          <div className="text-xl sm:text-2xl font-black tabular-nums leading-none text-slate-800 dark:text-slate-100">{value}<span className="text-xs sm:text-sm text-slate-400 font-bold">{suffix}</span></div>
         </div>
       </div>
+      <div className="mt-1.5 text-[8px] sm:text-[10px] uppercase tracking-[0.12em] font-bold text-slate-500 dark:text-slate-400">{label}</div>
     </div>
   );
 }
